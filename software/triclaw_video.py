@@ -187,7 +187,7 @@ class GSTriClawVideo():
     
     # Convert IP addres to streaming url
     def IP_to_URL(self, IP, port=8888):
-        return 'http://{}:{}'.format(IP, port)
+        return 'http://{}:{}/cam_feed/0'.format(IP, port)
     
     # Clear bytes data and open url
     def _prepare_stream(self):
@@ -225,10 +225,9 @@ class GSTriClawVideo():
     
     # During streaming, read object from URL
     def _decode_image_from_stream(self):
-        self._bytes += self._url_stream.read(1024)
+        self._bytes += self._url_stream.read(32767)
         a = self._bytes.find(b'\xff\xd8')
         b = self._bytes.find(b'\xff\xd9')
-        print('here', a, b)
         if a != -1 and b != -1:
             jpg = self._bytes[a:b+2]
             self._bytes = self._bytes[b+2:]
@@ -381,7 +380,7 @@ class GSTriClawVideo():
     
 
 if __name__ == "__main__":
-    tri_claw_video = GSTriClawVideo(IP="128.31.36.80", config_csv="./config/config_markers.csv")
+    tri_claw_video = GSTriClawVideo(IP="128.31.38.56", config_csv="./config/config_markers.csv")
     tri_claw_video.start_stream(plot=True, plot_diff=True)
     time.sleep(30)
     tri_claw_video.end_stream()
