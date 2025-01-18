@@ -381,7 +381,7 @@ class GSTriClawVideo():
     
 
 if __name__ == "__main__":
-    tri_claw_video = GSTriClawVideo(IP="128.31.36.80", config_csv="../wedge_config/config_markers.csv")
+    tri_claw_video = GSTriClawVideo(IP="128.31.36.80", config_csv="./config/config_markers.csv")
     tri_claw_video.start_stream(plot=True, plot_diff=True)
     time.sleep(30)
     tri_claw_video.end_stream()
