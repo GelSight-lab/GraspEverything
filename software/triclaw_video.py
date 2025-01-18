@@ -385,3 +385,4 @@ if __name__ == "__main__":
     tri_claw_video.start_stream(plot=True, plot_diff=True)
     time.sleep(30)
     tri_claw_video.end_stream()
+    tri_claw_video.save('./test.avi')
