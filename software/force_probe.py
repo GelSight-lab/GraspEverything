@@ -17,7 +17,7 @@ import serial
 import time
 import sys
 
-DEV_SERIAL_PATH = '/dev/ttyUSB4'        # for Controller
+DEV_SERIAL_PATH = 'COM5'        # for Controller
 #DEV_SERIAL_PATH = '/dev/ttyACM0'       # for MultiFingerEvaBoardVer.3.0
 SERIAL_BAUDRATE = 1000000               # for Contoller
 #SERIAL_BAUDRATE = 921600               # for MultiFingerEvaBoardVer.3.0

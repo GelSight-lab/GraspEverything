@@ -9,7 +9,7 @@ from utils.utils import *
 from utils.Vis3D import ClassVis3D
 from threading import Thread
 
-def read_csv(filename="config.csv"):
+def read_csv(filename="software/config.csv"):
     rows = []
     with open(filename, "r") as csvfile:
         csvreader = csv.reader(csvfile)
@@ -88,8 +88,8 @@ class GSTriClawVideo():
     def diff_images(self):
         if len(self._diff_images) != len(self._raw_rgb_frames):
             self._diff_images = []
-            ref_img = self.raw_rgb_frames()[0]
-            for img in self.raw_rgb_frames():
+            ref_img = self.raw_RGB_frames()[0]
+            for img in self.raw_RGB_frames():
                 self._diff_images.append(self.calc_diff_image(ref_img, img))
         return np.stack(self._diff_images, axis=0)
     
