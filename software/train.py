@@ -12,6 +12,7 @@ from torchvision import datasets, transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TRAIN_VAL_SPLIT = 0.2
+BATCH_SIZE = 8
 
 INDENTER_SHAPE = 'ALL'
 assert INDENTER_SHAPE in ['ALL', 'SPHERE', 'SQUARE', 'CONE']
@@ -46,26 +47,21 @@ class ImageRegressionDataset(Dataset):
 
     def __getitem__(self, idx):
         img_path, label_path = self.samples[idx]
-
-        # Load image
+        
+        # Load image efficiently
         image = cv2.imread(img_path, cv2.IMREAD_COLOR)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = image.astype(np.float32) / 255.0
+        image = torch.from_numpy(image).float().div(255.0).permute(2, 0, 1)  # HWC -> CHW
         
-        # Load label
-        label = np.load(label_path).astype(np.float32)
-        label = label.item()  # Convert to scalar float
-
-        # Convert to PyTorch tensor
-        image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1)  # HWC -> CHW
-        label = torch.tensor(label, dtype=torch.float32)
+        # Load label efficiently
+        label = torch.tensor(np.load(label_path, allow_pickle=True).item(), dtype=torch.float32)
         
         if self.transform:
             image = self.transform(image)
 
         return image, label
 
-def get_dataloaders(data_dir, batch_size=32, image_size=224, num_workers=0):
+def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=0):
     """Creates DataLoader for training and validation."""
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
@@ -89,7 +85,7 @@ def get_dataloaders(data_dir, batch_size=32, image_size=224, num_workers=0):
     
     return train_loader, val_loader
 
-def train_model(data_dir, num_epochs=10, batch_size=32, learning_rate=0.001):
+def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.001):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, val_loader = get_dataloaders(data_dir, batch_size)
     
@@ -137,5 +133,5 @@ def train_model(data_dir, num_epochs=10, batch_size=32, learning_rate=0.001):
     return model
 
 # Example usage
-data_dir = "./software/data"
+data_dir = "./data"
 model = train_model(data_dir)
