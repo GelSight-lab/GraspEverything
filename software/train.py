@@ -116,7 +116,7 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
-                outputs = model(images)
+                outputs = model(images).squeeze()
                 val_total_sq_err += torch.sum(torch.square(outputs - labels))
                 val_total_images += len(outputs)
         
