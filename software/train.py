@@ -12,7 +12,7 @@ from torchvision import datasets, transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TRAIN_VAL_SPLIT = 0.2
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 
 INDENTER_SHAPE = 'ALL'
 assert INDENTER_SHAPE in ['ALL', 'SPHERE', 'SQUARE', 'CONE']
@@ -62,8 +62,7 @@ class ImageRegressionDataset(Dataset):
 
         return image, label
 
-def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=0):
-    """Creates DataLoader for training and validation."""
+def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=4, pin_memory=True):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -73,43 +72,37 @@ def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers
         dataset = ImageRegressionDataset(f"{data_dir}/{INDENTER_SHAPE}", transform=transform)
     else:
         dataset = ImageRegressionDataset(f"{data_dir}/SPHERE", transform=transform) + \
-            ImageRegressionDataset(f"{data_dir}/SQUARE", transform=transform) + \
-            ImageRegressionDataset(f"{data_dir}/CONE", transform=transform)
+                  ImageRegressionDataset(f"{data_dir}/SQUARE", transform=transform) + \
+                  ImageRegressionDataset(f"{data_dir}/CONE", transform=transform)
 
-    val_size = int(len(dataset)*TRAIN_VAL_SPLIT)
-
-    # Split dataset
+    val_size = int(len(dataset) * TRAIN_VAL_SPLIT)
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [len(dataset) - val_size, val_size])
     
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
     
     return train_loader, val_loader
 
 def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.001):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, val_loader = get_dataloaders(data_dir, batch_size)
     
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     for epoch in range(num_epochs):
-        
         train_total_sq_err = 0
         train_total_images = 0
         val_total_sq_err = 0
         val_total_images = 0
 
         model.train()
-
         for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
             optimizer.zero_grad()
-            
-            # Step
+
             outputs = model(images)
             outputs = torch.nn.functional.relu(outputs)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs.squeeze(), labels.squeeze())
             loss.backward()
             optimizer.step()
 
@@ -117,15 +110,13 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
             train_total_images += len(outputs)
 
         model.eval()
-
-        for images, labels in val_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-
-            val_total_sq_err += torch.sum(torch.square(outputs - labels))
-            val_total_images += len(outputs)
-            
-        # Compute RMSE
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
+                outputs = model(images)
+                val_total_sq_err += torch.sum(torch.square(outputs - labels))
+                val_total_images += len(outputs)
+        
         train_rmse = torch.sqrt(train_total_sq_err / train_total_images)
         val_rmse = torch.sqrt(val_total_sq_err / val_total_images)
 
