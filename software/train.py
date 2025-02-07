@@ -16,12 +16,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAIN_VAL_SPLIT = 0.2
 BATCH_SIZE = 32
 
-# Import ResNet18 model
-model = models.resnet18(pretrained=True)
-model.fc = nn.Linear(model.fc.in_features, 1)
-model = torch.nn.DataParallel(model, device_ids=[0, 1])
-model = model.to(device)
-
 class ImageRegressionDataset(Dataset):
     def __init__(self, root_dir, transform=None):
         """
@@ -129,9 +123,17 @@ def train_model(data_dir, indenter_shape, num_epochs=50, batch_size=BATCH_SIZE, 
 
         if val_rmse < best_val_rmse:
             best_val_rmse = val_rmse
-            torch.save(model.state_dict(), f'./{INDENTER_SHAPE}.pth')
+            torch.save(model.state_dict(), f'./{indenter_shape}.pth')
+            with open(f'./{indenter_shape}.txt', 'w') as file:
+                file.write(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.3f}, Train RMSE: {train_rmse:.3f}, Val. RMSE: {val_rmse:.3f}")
 
     return model
+
+# Import ResNet18 model
+model = models.resnet18(pretrained=True)
+model.fc = nn.Linear(model.fc.in_features, 1)
+model = torch.nn.DataParallel(model, device_ids=[0, 1])
+model = model.to(device)
 
 # Example usage
 data_dir = "./data"
