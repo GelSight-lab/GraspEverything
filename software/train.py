@@ -85,7 +85,7 @@ def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers
     
     return train_loader, val_loader
 
-def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.001):
+def train_model(data_dir, num_epochs=50, batch_size=BATCH_SIZE, learning_rate=0.001):
     train_loader, val_loader = get_dataloaders(data_dir, batch_size)
     
     criterion = nn.MSELoss()
@@ -115,7 +115,7 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
             train_total_images += len(outputs)
 
         model.eval()
-        
+
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
