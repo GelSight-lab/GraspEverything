@@ -160,7 +160,7 @@ class GSTriClawVideo():
         depth = self.grad2depth(diff_img, dx, dy)
         return depth
     
-    # Convert IP addres to streaming url
+    # Convert IP address to streaming url
     def IP_to_URL(self, IP, port=8888):
         return 'http://{}:{}/cam_feed/0'.format(IP, port)
     
@@ -355,9 +355,9 @@ class GSTriClawVideo():
     
 
 if __name__ == "__main__":
-    tri_claw_video = GSTriClawVideo(IP="128.31.38.56", config_csv="config.csv")
+    tri_claw_video = GSTriClawVideo(IP="128.31.34.187", config_csv="software/config.csv")
     tri_claw_video.start_stream(plot=True, plot_diff=True, plot_depth=True)
     _ = input("Press enter to stop recording...")
     print('Recording stopped.')
     tri_claw_video.end_stream()
-    tri_claw_video.save('./test.avi')
+    # tri_claw_video.load('./videos/M2_5_long.avi')
