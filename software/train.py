@@ -101,7 +101,6 @@ def train_model(data_dir, indenter_shape, num_epochs=50, batch_size=BATCH_SIZE, 
             optimizer.step()
             train_total_loss += loss
 
-            outputs = torch.clamp(outputs, min=0, max=10)
             train_total_sq_err += torch.sum(torch.square(outputs - labels))
             train_total_images += len(outputs)
 
@@ -111,7 +110,6 @@ def train_model(data_dir, indenter_shape, num_epochs=50, batch_size=BATCH_SIZE, 
             for images, labels in val_loader:
                 images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
                 outputs = model(images).squeeze()
-                outputs = torch.clamp(outputs, min=0, max=10)
                 val_total_sq_err += torch.sum(torch.square(outputs - labels))
                 val_total_images += len(outputs)
         
