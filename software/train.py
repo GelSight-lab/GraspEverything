@@ -5,6 +5,8 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
+import matplotlib.pyplot as plt
+
 from torchvision import models
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
@@ -12,9 +14,9 @@ from torchvision import datasets, transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TRAIN_VAL_SPLIT = 0.2
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 
-INDENTER_SHAPE = 'ALL'
+INDENTER_SHAPE = 'SPHERE'
 assert INDENTER_SHAPE in ['ALL', 'SPHERE', 'SQUARE', 'CONE']
 
 # Import ResNet18 model
@@ -62,7 +64,7 @@ class ImageRegressionDataset(Dataset):
 
         return image, label
 
-def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=4, pin_memory=True):
+def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=0, pin_memory=False):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -90,6 +92,7 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     for epoch in range(num_epochs):
+        train_total_loss = 0
         train_total_sq_err = 0
         train_total_images = 0
         val_total_sq_err = 0
@@ -100,11 +103,11 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
             images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
             optimizer.zero_grad()
 
-            outputs = model(images)
-            outputs = torch.nn.functional.relu(outputs)
-            loss = criterion(outputs.squeeze(), labels.squeeze())
+            outputs = model(images).squeeze()
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            train_total_loss += loss
 
             train_total_sq_err += torch.sum(torch.square(outputs - labels))
             train_total_images += len(outputs)
@@ -117,10 +120,11 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
                 val_total_sq_err += torch.sum(torch.square(outputs - labels))
                 val_total_images += len(outputs)
         
+        train_loss = train_total_loss / train_total_images
         train_rmse = torch.sqrt(train_total_sq_err / train_total_images)
         val_rmse = torch.sqrt(val_total_sq_err / val_total_images)
 
-        print(f"Epoch [{epoch+1}/{num_epochs}], Train RMSE: {train_rmse:.3f}, Val. RMSE: {val_rmse:.3f}")
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.3f}, Train RMSE: {train_rmse:.3f}, Val. RMSE: {val_rmse:.3f}")
 
     return model
 
