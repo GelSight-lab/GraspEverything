@@ -16,9 +16,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAIN_VAL_SPLIT = 0.2
 BATCH_SIZE = 32
 
-INDENTER_SHAPE = 'SPHERE'
-assert INDENTER_SHAPE in ['ALL', 'SPHERE', 'SQUARE', 'CONE']
-
 # Import ResNet18 model
 model = models.resnet18(pretrained=True)
 model.fc = nn.Linear(model.fc.in_features, 1)
@@ -64,14 +61,14 @@ class ImageRegressionDataset(Dataset):
 
         return image, label
 
-def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers=0, pin_memory=False):
+def get_dataloaders(data_dir, indenter_shape, batch_size=BATCH_SIZE, image_size=224, num_workers=0, pin_memory=False):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
-    if INDENTER_SHAPE != 'ALL':
-        dataset = ImageRegressionDataset(f"{data_dir}/{INDENTER_SHAPE}", transform=transform)
+    if indenter_shape != 'ALL':
+        dataset = ImageRegressionDataset(f"{data_dir}/{indenter_shape}", transform=transform)
     else:
         dataset = ImageRegressionDataset(f"{data_dir}/SPHERE", transform=transform) + \
                   ImageRegressionDataset(f"{data_dir}/SQUARE", transform=transform) + \
@@ -85,8 +82,8 @@ def get_dataloaders(data_dir, batch_size=BATCH_SIZE, image_size=224, num_workers
     
     return train_loader, val_loader
 
-def train_model(data_dir, num_epochs=50, batch_size=BATCH_SIZE, learning_rate=0.001):
-    train_loader, val_loader = get_dataloaders(data_dir, batch_size)
+def train_model(data_dir, indenter_shape, num_epochs=50, batch_size=BATCH_SIZE, learning_rate=0.001):
+    train_loader, val_loader = get_dataloaders(data_dir, indenter_shape, batch_size)
     
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -138,4 +135,7 @@ def train_model(data_dir, num_epochs=50, batch_size=BATCH_SIZE, learning_rate=0.
 
 # Example usage
 data_dir = "./data"
-model = train_model(data_dir)
+for INDENTER_SHAPE in ['SPHERE', 'SQUARE', 'CONE', 'ALL']:
+    print(INDENTER_SHAPE)
+    model = train_model(data_dir, INDENTER_SHAPE)
+    print('\n\n\n')
