@@ -20,6 +20,7 @@ assert INDENTER_SHAPE in ['ALL', 'SPHERE', 'SQUARE', 'CONE']
 # Import ResNet18 model
 model = models.resnet18(pretrained=True)
 model.fc = nn.Linear(model.fc.in_features, 1)
+model = torch.nn.DataParallel(model, device_ids=[0, 1])
 model = model.to(device)
 
 class ImageRegressionDataset(Dataset):
