@@ -130,7 +130,7 @@ def train_model(data_dir, indenter_shape, num_epochs=50, batch_size=BATCH_SIZE, 
     return model
 
 # Import ResNet18 model
-model = models.resnet18(pretrained=True)
+model = models.resnet18(pretrained=False)
 model.fc = nn.Linear(model.fc.in_features, 1)
 model = torch.nn.DataParallel(model, device_ids=[0, 1])
 model = model.to(device)
