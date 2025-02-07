@@ -90,6 +90,7 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
     
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    best_val_rmse = 1e10
     
     for epoch in range(num_epochs):
         train_total_loss = 0
@@ -109,14 +110,17 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
             optimizer.step()
             train_total_loss += loss
 
+            outputs = torch.clamp(outputs, min=0, max=10)
             train_total_sq_err += torch.sum(torch.square(outputs - labels))
             train_total_images += len(outputs)
 
         model.eval()
+        
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
                 outputs = model(images).squeeze()
+                outputs = torch.clamp(outputs, min=0, max=10)
                 val_total_sq_err += torch.sum(torch.square(outputs - labels))
                 val_total_images += len(outputs)
         
@@ -125,6 +129,10 @@ def train_model(data_dir, num_epochs=10, batch_size=BATCH_SIZE, learning_rate=0.
         val_rmse = torch.sqrt(val_total_sq_err / val_total_images)
 
         print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.3f}, Train RMSE: {train_rmse:.3f}, Val. RMSE: {val_rmse:.3f}")
+
+        if val_rmse < best_val_rmse:
+            best_val_rmse = val_rmse
+            torch.save(model.state_dict(), f'./{INDENTER_SHAPE}.pth')
 
     return model
 
