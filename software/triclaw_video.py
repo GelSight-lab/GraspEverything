@@ -47,7 +47,7 @@ class GSTriClawVideo():
         self.markers = markers
 
         # Choose size to crop image to
-        self.cropped_size = (1200, 600)
+        self.cropped_size = (2400, 1200)
 
         # Create tactile sensing mask based on config
         mask = np.zeros((self.cropped_size[1], self.cropped_size[0]), dtype=np.uint8)
@@ -346,8 +346,8 @@ class GSTriClawVideo():
 
     # Write recorded frames to video file
     def save(self, path_to_file):
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-        video_writer = cv2.VideoWriter(path_to_file, fourcc, self.FPS, (self.cropped_size[1], self.cropped_size[0]))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        video_writer = cv2.VideoWriter(path_to_file, fourcc, self.FPS, (self.cropped_size[0], self.cropped_size[1]))
         for frame in self._raw_rgb_frames:
             video_writer.write(frame)
         video_writer.release()
@@ -357,7 +357,17 @@ class GSTriClawVideo():
 if __name__ == "__main__":
     tri_claw_video = GSTriClawVideo(IP="128.31.34.187", config_csv="software/config.csv")
     tri_claw_video.start_stream(plot=True, plot_diff=True, plot_depth=True)
-    _ = input("Press enter to stop recording...")
-    print('Recording stopped.')
+    # _ = input("Press enter to stop recording...")
+    # print('Recording stopped.')
+    time.sleep(10)
     tri_claw_video.end_stream()
-    # tri_claw_video.load('./videos/M2_5_long.avi')
+    tri_claw_video.save('./videos/ball_array.avi')
+
+    mid_i = len(tri_claw_video._raw_rgb_frames) // 2
+
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.imshow(np.flip(tri_claw_video._raw_rgb_frames[mid_i], axis=-1))
+    plt.figure()
+    plt.imshow(np.flip(tri_claw_video.calc_diff_image(tri_claw_video._raw_rgb_frames[0], tri_claw_video._raw_rgb_frames[mid_i]), axis=-1))
+    plt.show()
