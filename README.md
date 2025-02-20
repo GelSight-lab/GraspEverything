@@ -1,1 +1,1 @@
-# TriClaw
+# Grasp Everything (GET)
